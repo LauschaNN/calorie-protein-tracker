@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { SimpleSelect } from '@/components/ui/simple-select';
+import { Select } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ShoppingCart, Download, Trash2, CheckCircle2, Circle, Users, Package, Edit, X } from 'lucide-react';
 import type { ShoppingList, ShoppingListItem, User } from '../types';
 
@@ -24,6 +25,8 @@ const GlobalShoppingList: React.FC<GlobalShoppingListProps> = ({
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [showOnlyUnchecked, setShowOnlyUnchecked] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
 
   // Get consolidated shopping list
   const getConsolidatedList = (): ShoppingListItem[] => {
@@ -89,13 +92,37 @@ const GlobalShoppingList: React.FC<GlobalShoppingListProps> = ({
   };
 
   const handleRemoveItem = (ingredientId: string) => {
+    setDeletingItemId(ingredientId);
+  };
+
+  const confirmRemoveItem = () => {
+    if (!deletingItemId) return;
+    
     // Remove from all shopping lists that contain this ingredient
     shoppingLists.forEach(shoppingList => {
       if (selectedUser !== 'all' && shoppingList.userId !== selectedUser) return;
       
-      const updatedItems = shoppingList.items.filter(item => item.ingredientId !== ingredientId);
+      const updatedItems = shoppingList.items.filter(item => item.ingredientId !== deletingItemId);
       onUpdateShoppingList(shoppingList.userId, updatedItems);
     });
+    setDeletingItemId(null);
+  };
+
+  const cancelRemoveItem = () => {
+    setDeletingItemId(null);
+  };
+
+  const handleClearAll = () => {
+    setShowClearAllConfirm(true);
+  };
+
+  const confirmClearAll = () => {
+    onClearAllShoppingLists();
+    setShowClearAllConfirm(false);
+  };
+
+  const cancelClearAll = () => {
+    setShowClearAllConfirm(false);
   };
 
   const handleDownloadList = () => {
@@ -147,7 +174,7 @@ const GlobalShoppingList: React.FC<GlobalShoppingListProps> = ({
             Download
           </Button>
           <Button
-            onClick={onClearAllShoppingLists}
+            onClick={handleClearAll}
             disabled={shoppingLists.length === 0}
             variant="outline"
             className="hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive transition-all duration-200 hover-lift"
@@ -164,7 +191,7 @@ const GlobalShoppingList: React.FC<GlobalShoppingListProps> = ({
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="text-sm font-semibold mb-2 block">Filter by User</label>
-              <SimpleSelect
+              <Select
                 value={selectedUser}
                 onValueChange={setSelectedUser}
                 placeholder="Select user"
@@ -357,6 +384,54 @@ const GlobalShoppingList: React.FC<GlobalShoppingListProps> = ({
           )}
         </div>
       )}
+
+      {/* Delete Item Confirmation Dialog */}
+      <Dialog open={deletingItemId !== null} onOpenChange={() => setDeletingItemId(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Remove Item</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to remove this item from all shopping lists? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelRemoveItem} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmRemoveItem}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Remove Item
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear All Confirmation Dialog */}
+      <Dialog open={showClearAllConfirm} onOpenChange={setShowClearAllConfirm}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Clear All Shopping Lists</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to clear ALL shopping lists for ALL users? This action cannot be undone and will remove all items from every user's shopping list.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelClearAll} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmClearAll}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Clear All Lists
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

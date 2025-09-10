@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { SimpleSelect } from '@/components/ui/simple-select';
+import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2 } from 'lucide-react';
@@ -45,6 +45,7 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [selectedDay, setSelectedDay] = useState(0); // 0 = Monday, 6 = Sunday
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const [deletingMeal, setDeletingMeal] = useState<{ dayId: string; mealId: string; mealName: string } | null>(null);
   const [formData, setFormData] = useState({
     recipeId: '',
     quantity: 1,
@@ -115,6 +116,21 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
     };
   };
 
+  const handleDeleteMeal = (dayId: string, mealId: string, mealName: string) => {
+    setDeletingMeal({ dayId, mealId, mealName });
+  };
+
+  const confirmDeleteMeal = () => {
+    if (deletingMeal) {
+      onDeleteMeal(deletingMeal.dayId, deletingMeal.mealId);
+      setDeletingMeal(null);
+    }
+  };
+
+  const cancelDeleteMeal = () => {
+    setDeletingMeal(null);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -124,7 +140,7 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
         </div>
         <div className="w-full sm:w-48">
           <Label htmlFor="day-select" className="text-sm font-semibold">Select Day</Label>
-          <SimpleSelect
+          <Select
             value={selectedDay.toString()}
             onValueChange={(value: string) => setSelectedDay(Number(value))}
             placeholder="Select a day"
@@ -195,7 +211,7 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onDeleteMeal(currentDay!.id, meal.id)}
+                          onClick={() => handleDeleteMeal(currentDay!.id, meal.id, recipe?.name || 'Unknown Recipe')}
                           className="hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive transition-all duration-200"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -232,7 +248,7 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
                       <div className="grid gap-6 py-6">
                         <div className="grid gap-3">
                           <Label htmlFor="recipe" className="text-sm font-semibold">Recipe</Label>
-                          <SimpleSelect
+                          <Select
                             value={formData.recipeId}
                             onValueChange={(value: string) => setFormData({ ...formData, recipeId: value })}
                             placeholder="Select a recipe"
@@ -277,6 +293,30 @@ const MealPlanner: React.FC<MealPlannerProps> = ({
           );
         })}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deletingMeal !== null} onOpenChange={() => setDeletingMeal(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Delete Meal</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to delete "{deletingMeal?.mealName}" from your meal plan? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelDeleteMeal} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmDeleteMeal}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Delete Meal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

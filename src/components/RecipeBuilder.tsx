@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Minus } from 'lucide-react';
@@ -26,6 +26,7 @@ const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     ingredients: [] as RecipeIngredient[],
@@ -103,6 +104,21 @@ const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
     setIsAdding(false);
   };
 
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      onDeleteRecipe(deletingId);
+      setDeletingId(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeletingId(null);
+  };
+
   const currentNutrition = calculateRecipeNutrition(formData.ingredients);
 
   return (
@@ -166,18 +182,13 @@ const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                             <Select
                               value={ingredient.ingredientId}
                               onValueChange={(value: string) => handleUpdateIngredient(index, 'ingredientId', value)}
-                            >
-                              <SelectTrigger className="focus-ring h-10">
-                                <SelectValue placeholder="Select ingredient" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ingredients.map((ing) => (
-                                  <SelectItem key={ing.id} value={ing.id}>
-                                    {ing.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              placeholder="Select ingredient"
+                              options={ingredients.map((ing) => ({
+                                value: ing.id,
+                                label: ing.name,
+                              }))}
+                              className="focus-ring h-10"
+                            />
                           </div>
                           
                           <div className="w-20">
@@ -298,7 +309,7 @@ const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onDeleteRecipe(recipe.id)}
+                  onClick={() => handleDelete(recipe.id)}
                   className="flex-1 hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive transition-all duration-200"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -323,6 +334,30 @@ const RecipeBuilder: React.FC<RecipeBuilderProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deletingId !== null} onOpenChange={() => setDeletingId(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Delete Recipe</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to delete this recipe? This action cannot be undone and will remove it from all meal plans.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelDelete} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Delete Recipe
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

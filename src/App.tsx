@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SimpleSelect } from '@/components/ui/simple-select';
+import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import IngredientManager from './components/IngredientManager';
@@ -10,8 +10,6 @@ import WeeklyOverview from './components/WeeklyOverview';
 import UserManager from './components/UserManager';
 import GoalsManager from './components/GoalsManager';
 import GlobalOverview from './components/GlobalOverview';
-import ShoppingListManager from './components/ShoppingListManager';
-import GlobalShoppingList from './components/GlobalShoppingList';
 import type { Ingredient, Recipe, Day, Meal, MealType, NutritionTotals, User, UserMealPlan, NutritionGoals, ShoppingList, ShoppingListItem } from './types';
 
 function App() {
@@ -21,7 +19,7 @@ function App() {
   const [userMealPlans, setUserMealPlans] = useState<UserMealPlan[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'people' | 'ingredients' | 'recipes' | 'planner' | 'overview' | 'shopping' | 'global'>('people');
+  const [activeTab, setActiveTab] = useState<'people' | 'ingredients' | 'recipes' | 'planner' | 'overview' | 'global'>('people');
 
   // Load sample data on first load
   useEffect(() => {
@@ -331,7 +329,7 @@ function App() {
     ));
   };
 
-  // Shopping list management functions
+
   const generateShoppingList = (userId: string): ShoppingListItem[] => {
     const userMealPlan = userMealPlans.find(plan => plan.userId === userId);
     if (!userMealPlan) return [];
@@ -406,17 +404,8 @@ function App() {
     );
   };
 
-  const handleClearShoppingList = (userId: string) => {
-    setShoppingLists(prev => prev.filter(list => list.userId !== userId));
-  };
-
   const handleClearAllShoppingLists = () => {
     setShoppingLists([]);
-  };
-
-  const getCurrentUserShoppingList = () => {
-    if (!selectedUserId) return null;
-    return shoppingLists.find(list => list.userId === selectedUserId) || null;
   };
 
   // Ingredient management functions
@@ -610,7 +599,7 @@ function App() {
                   </div>
                   <div className="w-full lg:w-96">
                     <Label htmlFor="user-select" className="text-base font-semibold text-slate-700 mb-4 block">Current Person</Label>
-                    <SimpleSelect
+                    <Select
                       value={selectedUserId || ''}
                       onValueChange={handleSelectUser}
                       placeholder="Select a person"
@@ -632,8 +621,8 @@ function App() {
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'people' | 'ingredients' | 'recipes' | 'planner' | 'overview' | 'shopping' | 'global')} className="w-full mt-8">
-          <TabsList className="grid w-full grid-cols-7">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'people' | 'ingredients' | 'recipes' | 'planner' | 'overview' | 'global')} className="w-full mt-8">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="people">
               <span className="mr-2 text-lg">👥</span>
               People
@@ -653,10 +642,6 @@ function App() {
             <TabsTrigger value="overview">
               <span className="mr-2 text-lg">📊</span>
               Weekly Overview
-            </TabsTrigger>
-            <TabsTrigger value="shopping">
-              <span className="mr-2 text-lg">🛒</span>
-              Shopping List
             </TabsTrigger>
             <TabsTrigger value="global">
               <span className="mr-2 text-lg">🌍</span>
@@ -747,38 +732,17 @@ function App() {
             )}
           </TabsContent>
 
-          <TabsContent value="shopping">
-            {selectedUserId ? (
-              <ShoppingListManager
-                userId={selectedUserId}
-                userName={users.find(u => u.id === selectedUserId)?.name || ''}
-                shoppingList={getCurrentUserShoppingList()}
-                days={currentUserDays}
-                ingredients={ingredients}
-                onGenerateShoppingList={handleGenerateShoppingList}
-                onUpdateShoppingList={handleUpdateShoppingList}
-                onClearShoppingList={handleClearShoppingList}
-              />
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-6xl opacity-50 mb-4">🛒</div>
-                <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Person Selected</h3>
-                <p className="text-muted-foreground">Please select a person to manage their shopping list</p>
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="global">
             <div className="space-y-8">
               <GlobalOverview
                 users={users}
                 userMealPlans={userMealPlans}
-              />
-              <GlobalShoppingList
-                users={users}
                 shoppingLists={shoppingLists}
+                ingredients={ingredients}
                 onUpdateShoppingList={handleUpdateShoppingList}
                 onClearAllShoppingLists={handleClearAllShoppingLists}
+                onGenerateShoppingList={handleGenerateShoppingList}
               />
             </div>
           </TabsContent>

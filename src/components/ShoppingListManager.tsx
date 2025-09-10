@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { SimpleSelect } from '@/components/ui/simple-select';
+import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ShoppingCart, RefreshCw, Download, Trash2, CheckCircle2, Circle, Edit, Plus, X } from 'lucide-react';
 import type { ShoppingList, ShoppingListItem, Day, Ingredient } from '../types';
@@ -34,6 +34,8 @@ const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [newItem, setNewItem] = useState({
     ingredientId: '',
     quantity: 1,
@@ -70,10 +72,19 @@ const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
   };
 
   const handleRemoveItem = (ingredientId: string) => {
-    if (!shoppingList) return;
+    setDeletingItemId(ingredientId);
+  };
+
+  const confirmRemoveItem = () => {
+    if (!shoppingList || !deletingItemId) return;
     
-    const updatedItems = shoppingList.items.filter(item => item.ingredientId !== ingredientId);
+    const updatedItems = shoppingList.items.filter(item => item.ingredientId !== deletingItemId);
     onUpdateShoppingList(userId, updatedItems);
+    setDeletingItemId(null);
+  };
+
+  const cancelRemoveItem = () => {
+    setDeletingItemId(null);
   };
 
   const handleAddItem = () => {
@@ -118,7 +129,16 @@ const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
   };
 
   const handleClearList = () => {
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearList = () => {
     onClearShoppingList(userId);
+    setShowClearConfirm(false);
+  };
+
+  const cancelClearList = () => {
+    setShowClearConfirm(false);
   };
 
   const handleDownloadList = () => {
@@ -194,7 +214,7 @@ const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
                 <div className="grid gap-6 py-6">
                   <div className="grid gap-3">
                     <Label htmlFor="ingredient-select" className="text-sm font-semibold">Ingredient</Label>
-                    <SimpleSelect
+                    <Select
                       value={newItem.ingredientId}
                       onValueChange={(value) => setNewItem({ ...newItem, ingredientId: value })}
                       placeholder="Select an ingredient"
@@ -404,6 +424,54 @@ const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Item Confirmation Dialog */}
+      <Dialog open={deletingItemId !== null} onOpenChange={() => setDeletingItemId(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Remove Item</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to remove this item from the shopping list? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelRemoveItem} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmRemoveItem}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Remove Item
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear List Confirmation Dialog */}
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Clear Shopping List</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to clear {userName}'s entire shopping list? This action cannot be undone and will remove all items.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelClearList} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmClearList}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Clear List
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

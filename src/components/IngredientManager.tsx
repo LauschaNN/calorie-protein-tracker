@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2 } from 'lucide-react';
@@ -24,6 +24,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     caloriesPer100g: 0,
@@ -58,6 +59,21 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
     setFormData({ name: '', caloriesPer100g: 0, proteinPer100g: 0, unit: 'g' as 'g' | 'ml' | 'pieces' });
     setEditingId(null);
     setIsAdding(false);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      onDeleteIngredient(deletingId);
+      setDeletingId(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeletingId(null);
   };
 
   return (
@@ -137,16 +153,14 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
                     onValueChange={(value: string) =>
                       setFormData({ ...formData, unit: value as 'g' | 'ml' | 'pieces' })
                     }
-                  >
-                    <SelectTrigger className="focus-ring h-11">
-                      <SelectValue placeholder="Select unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="g">g (grams)</SelectItem>
-                      <SelectItem value="ml">ml (milliliters)</SelectItem>
-                      <SelectItem value="pieces">pieces</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select unit"
+                    options={[
+                      { value: 'g', label: 'g (grams)' },
+                      { value: 'ml', label: 'ml (milliliters)' },
+                      { value: 'pieces', label: 'pieces' },
+                    ]}
+                    className="focus-ring h-11"
+                  />
                 </div>
               </div>
               <DialogFooter className="gap-3">
@@ -202,7 +216,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onDeleteIngredient(ingredient.id)}
+                  onClick={() => handleDelete(ingredient.id)}
                   className="flex-1 hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive transition-all duration-200"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -227,6 +241,30 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deletingId !== null} onOpenChange={() => setDeletingId(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Delete Ingredient</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to delete this ingredient? This action cannot be undone and will remove it from all recipes.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelDelete} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Delete Ingredient
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

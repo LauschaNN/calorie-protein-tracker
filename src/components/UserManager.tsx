@@ -27,6 +27,7 @@ const UserManager: React.FC<UserManagerProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,6 +67,21 @@ const UserManager: React.FC<UserManagerProps> = ({
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      onDeleteUser(deletingId);
+      setDeletingId(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeletingId(null);
   };
 
   return (
@@ -190,7 +206,7 @@ const UserManager: React.FC<UserManagerProps> = ({
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteUser(user.id);
+                    handleDelete(user.id);
                   }}
                   className="flex-1 hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive transition-all duration-200"
                 >
@@ -216,6 +232,30 @@ const UserManager: React.FC<UserManagerProps> = ({
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deletingId !== null} onOpenChange={() => setDeletingId(null)}>
+        <DialogContent className="sm:max-w-[425px] glass shadow-modern-lg">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold text-destructive">Delete Person</DialogTitle>
+            <DialogDescription className="text-base">
+              Are you sure you want to delete this person? This action cannot be undone and will remove all their meal plans and shopping lists.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button type="button" variant="outline" onClick={cancelDelete} className="hover-lift">
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-modern hover:shadow-modern-lg transition-all duration-300 hover-lift"
+            >
+              Delete Person
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
